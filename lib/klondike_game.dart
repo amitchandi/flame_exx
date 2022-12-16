@@ -4,21 +4,23 @@ import 'package:flame/components.dart';
 import 'package:flame/flame.dart';
 import 'package:flame/game.dart';
 import 'package:flame/experimental.dart';
-import 'package:flame_ex/components/undo_button.dart';
+import 'package:flame_audio/audio_pool.dart';
+import 'package:flame_audio/flame_audio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
-import 'package:flame/effects.dart';
 
 import 'components/card.dart';
+import 'components/reset_button.dart';
 import 'components/stock.dart';
 import 'components/foundation.dart';
 import 'components/pile.dart';
 import 'components/waste.dart';
+import 'components/undo_button.dart';
 import 'move.dart';
 import 'pile.dart';
 
 class KlondikeGame extends FlameGame
-    with HasTappableComponents, HasDraggableComponents {
+    with HasTappableComponents, HasDraggableComponents, HasTappablesBridge {
   static const double cardWidth = 1000.0;
   static const double cardHeight = 1400.0;
   static const double cardGap = 175.0;
@@ -30,21 +32,41 @@ class KlondikeGame extends FlameGame
     const Radius.circular(cardRadius),
   );
 
+  late final StockPile stock;
+  late final WastePile waste;
+  late final List<FoundationPile> foundations;
+  late final List<TableauPile> piles;
+
+  late final AudioPool flip;
+  late final AudioPool place;
+
+  late final List<Card> cards;
+
+  late final World world;
+
   @override
   Future<void> onLoad() async {
     //this.debugMode = true;
     await Flame.images.load('klondike-sprites.png');
     await Flame.images.load('undo.png');
-    final stock = StockPile()
+    await Flame.images.load('reset.png');
+    await Flame.images.load('buttons.png');
+    await FlameAudio.audioCache.clearAll();
+    flip = await FlameAudio.createPool('card_flip.mp3', maxPlayers: 2);
+    place = await FlameAudio.createPool('card_place.wav', maxPlayers: 10);
+    stock = StockPile()
       ..size = cardSize
       ..position = Vector2(cardGap, cardGap);
-    final waste = WastePile()
+    waste = WastePile()
       ..size = cardSize
       ..position = Vector2(cardWidth + 2 * cardGap, cardGap);
     final undoButton = UndoButton()
-      ..size = Vector2(500, 200)
+      ..size = Vector2(512, 512)
       ..position = Vector2(3000, cardGap);
-    final foundations = List.generate(
+    final resetButton = ResetButton()
+      ..size = Vector2(512, 512)
+      ..position = Vector2(3000, 1000);
+    foundations = List.generate(
       4,
       (i) => FoundationPile(
         i,
@@ -54,7 +76,7 @@ class KlondikeGame extends FlameGame
         ..position =
             Vector2((i + 3) * (cardWidth + cardGap) + cardGap, cardGap),
     );
-    final piles = List.generate(
+    piles = List.generate(
       7,
       (i) => TableauPile()
         ..size = cardSize
@@ -64,10 +86,11 @@ class KlondikeGame extends FlameGame
         ),
     );
 
-    final world = World()
+    world = World()
       ..add(stock)
       ..add(waste)
       ..add(undoButton)
+      ..add(resetButton)
       ..addAll(foundations)
       ..addAll(piles);
     add(world);
@@ -79,16 +102,22 @@ class KlondikeGame extends FlameGame
       ..viewfinder.anchor = Anchor.topCenter;
     add(camera);
 
-    final cards = [
+    cards = [
       for (var rank = 1; rank <= 13; rank++)
-        for (var suit = 0; suit < 4; suit++) Card(rank, suit)
+        for (var suit = 0; suit < 4; suit++)
+          Card(rank, suit)..position = waste.position
     ];
     cards.shuffle();
     world.addAll(cards);
+    initCards(cards, piles, stock);
+  }
 
+  void initCards(
+      List<Card> cards, List<TableauPile> piles, StockPile stock) async {
     for (var i = 0; i < 7; i++) {
       for (var j = i; j < 7; j++) {
-        piles[j].acquireCard(cards.removeLast());
+        piles[j].acquireCardInit(cards.removeLast(), i.toDouble());
+        await Future.delayed(const Duration(milliseconds: 100));
       }
       piles[i].flipTopCard();
     }
@@ -98,40 +127,42 @@ class KlondikeGame extends FlameGame
   }
 
   final List<Move> moves = [];
+  bool isRunningUndo = false;
 
   void undoMove() {
     if (moves.isEmpty) {
+      print('empty moves');
       return;
     }
+    if (isRunningUndo) {
+      print(isRunningUndo);
+      return;
+    }
+    isRunningUndo = true;
+
     Move lastmove = moves.removeLast();
     // use lastmove to return cards to original source
     if (lastmove.fromPile is TableauPile && lastmove.toPile is TableauPile) {
-      if (lastmove.formerWasFlipped!) {
+      if (lastmove.formerWasFlipped != null && lastmove.formerWasFlipped!) {
         lastmove.formerParent?.flip();
       }
       Card fCard = lastmove.movedCards.first;
       lastmove.toPile.removeCard(fCard);
-      if (lastmove.movedCards.length == 1) {
-        (lastmove.fromPile as TableauPile).acquireCardUndo(fCard);
-      } else {
-        (lastmove.fromPile as TableauPile)
-            .acquireMultiCardUndo(lastmove.movedCards);
-      }
-      // for (Card card in lastmove.movedCards) {
-      //   (lastmove.fromPile as TableauPile).acquireCardUndo(card);
-      // }
+      (lastmove.fromPile as TableauPile).acquireCardsUndo(lastmove.movedCards);
     } else if (lastmove.fromPile is StockPile && lastmove.toPile is WastePile) {
       for (Card card in lastmove.movedCards.reversed) {
         card.flip();
         lastmove.toPile.removeCard(card);
-        lastmove.fromPile.acquireCard(card);
       }
+      (lastmove.fromPile as StockPile)
+          .acquireCardsFromWaste(lastmove.movedCards.reversed.toList());
     } else if (lastmove.fromPile is WastePile && lastmove.toPile is StockPile) {
       for (Card card in lastmove.movedCards.reversed) {
         card.flip();
         lastmove.toPile.removeCard(card);
-        lastmove.fromPile.acquireCard(card);
       }
+      (lastmove.fromPile as WastePile)
+          .acquireCardsFromStock(lastmove.movedCards.reversed.toList());
     } else if (lastmove.fromPile is WastePile &&
         (lastmove.toPile is TableauPile || lastmove.toPile is FoundationPile)) {
       lastmove.toPile.removeCard(lastmove.movedCards.first);
@@ -143,8 +174,7 @@ class KlondikeGame extends FlameGame
         lastmove.formerParent?.flip();
       }
       lastmove.toPile.removeCard(lastmove.movedCards.first);
-      (lastmove.fromPile as TableauPile)
-          .acquireCardUndo(lastmove.movedCards.first);
+      (lastmove.fromPile as TableauPile).acquireCardsUndo(lastmove.movedCards);
     }
   }
 
@@ -156,6 +186,55 @@ class KlondikeGame extends FlameGame
       print(move);
     }
     moves.add(move);
+  }
+
+  void finishGame() async {
+    var allCards = (findGame()! as FlameGame)
+        .children
+        .whereType<World>()
+        .first
+        .children
+        .whereType<Card>();
+
+    var remainingCards =
+        allCards.where((element) => element.pile is TableauPile).toList();
+
+    remainingCards.sort(((a, b) {
+      return a.rank.value.compareTo(b.rank.value);
+    }));
+    for (var card in remainingCards) {
+      var foundation = allCards
+          .where((element) =>
+              element.suit == card.suit &&
+              element.rank.value == card.rank.value - 1)
+          .first;
+      if (kDebugMode) {
+        print('${card.toString()} <- $foundation');
+      }
+      card.priority = 100;
+      card.moveCard(foundation.position, () async {
+        foundation.pile?.acquireCard(card);
+      });
+      await Future.delayed(const Duration(milliseconds: 200));
+    }
+  }
+
+  void resetGame() {
+    world.children.whereType<Pile>().forEach((pile) {
+      pile.removeAllCards();
+    });
+    world.removeWhere((component) {
+      return component is Card;
+    });
+    cards.clear();
+    for (var rank = 1; rank <= 13; rank++) {
+      for (var suit = 0; suit < 4; suit++) {
+        cards.add(Card(rank, suit)..position = waste.position);
+      }
+    }
+    cards.shuffle();
+    world.addAll(cards);
+    initCards(cards, piles, stock);
   }
 }
 

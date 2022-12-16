@@ -7,7 +7,9 @@ import '../pile.dart';
 import '../suit.dart';
 import 'card.dart';
 
-class FoundationPile extends PositionComponent implements Pile {
+class FoundationPile extends PositionComponent
+    with HasGameRef<KlondikeGame>
+    implements Pile {
   FoundationPile(int intSuit, {super.position})
       : suit = Suit.fromInt(intSuit),
         super(size: KlondikeGame.cardSize);
@@ -29,6 +31,8 @@ class FoundationPile extends PositionComponent implements Pile {
     card.priority = _cards.length;
     _cards.add(card);
     card.pile = this;
+    gameRef.isRunningUndo = false;
+    gameRef.place.start(volume: 0.1);
   }
 
   @override
@@ -56,7 +60,12 @@ class FoundationPile extends PositionComponent implements Pile {
 
   @override
   void removeCard(Card card) {
-    _cards.removeLast();
+    _cards.remove(card);
+  }
+
+  @override
+  void removeAllCards() {
+    _cards.clear();
   }
 
   @override

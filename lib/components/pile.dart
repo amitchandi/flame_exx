@@ -1,10 +1,13 @@
 import 'dart:ui';
 import 'package:flame/components.dart';
+import 'package:flame/effects.dart';
 import '../klondike_game.dart';
 import '../pile.dart';
 import 'card.dart';
 
-class TableauPile extends PositionComponent implements Pile {
+class TableauPile extends PositionComponent
+    with HasGameRef<KlondikeGame>
+    implements Pile {
   TableauPile({super.position}) : super(size: KlondikeGame.cardSize);
 
   final List<Card> _cards = [];
@@ -22,31 +25,45 @@ class TableauPile extends PositionComponent implements Pile {
     _cards.add(card);
     card.pile = this;
     layOutCards();
+    gameRef.place.start(volume: 0.1);
   }
 
-  void acquireCardUndo(Card card) {
-    Vector2 pos = _cards.isEmpty ? position : position + _fanOffset1;
+  void acquireCardInit(Card card, double index) {
     card.priority = 100;
     _cards.add(card);
     card.pile = this;
-    card.moveCard(pos, () {
-      card.priority = _cards.length;
-      layOutCards();
-    });
+    card.add(MoveToEffect(
+      _cards.isEmpty
+          ? position
+          : position + (_fanOffset1.clone()..multiply(Vector2(0, index))),
+      EffectController(duration: 0.1),
+      onComplete: () {
+        card.priority = _cards.length;
+        gameRef.place.start(volume: 0.1);
+      },
+    ));
   }
 
-  void acquireMultiCardUndo(List<Card> cards) {
-    Card prevCard = _cards.last;
-    Vector2 pos = Vector2.copy(_cards.isEmpty ? position : prevCard.position);
+  void acquireCardsUndo(List<Card> cards) {
+    Card? prevCard;
+    Vector2 pos;
+    if (_cards.isEmpty) {
+      pos = position.clone();
+    } else {
+      prevCard = _cards.last;
+      pos = prevCard.position.clone();
+    }
     for (int i = 0; i < cards.length; i++) {
       Card card = cards[i];
-      pos.add(prevCard.isFaceDown && card == cards.first
-          ? _fanOffset1
-          : _fanOffset2);
+      if (_cards.isNotEmpty) {
+        pos.add(prevCard != null && prevCard.isFaceDown && card == cards.first
+            ? _fanOffset1
+            : _fanOffset2);
+      }
       card.priority = 100 + i;
       _cards.add(card);
       card.pile = this;
-      card.moveCard(pos, () {
+      card.moveCard(pos, () async {
         card.priority = _cards.length;
         if (card == cards.last) {
           layOutCards();
@@ -96,6 +113,11 @@ class TableauPile extends PositionComponent implements Pile {
   }
 
   @override
+  void removeAllCards() {
+    _cards.clear();
+  }
+
+  @override
   void returnCard(Card card) async {
     final index = _cards.indexOf(card);
     card.priority = 100;
@@ -103,23 +125,27 @@ class TableauPile extends PositionComponent implements Pile {
         index == 0
             ? position
             : _cards[index - 1].position +
-                (_cards[index - 1].isFaceDown ? _fanOffset1 : _fanOffset2), () {
+                (_cards[index - 1].isFaceDown ? _fanOffset1 : _fanOffset2),
+        () async {
       card.priority = index;
       layOutCards();
     });
   }
 
   void returnCards(List<Card> cards) {
-    Card prevCard = _cards[_cards.indexOf(cards.first) - 1];
-    Vector2 pos = Vector2.copy(_cards.isEmpty ? position : prevCard.position);
+    int index = _cards.indexOf(cards.first);
+    Card? prevCard = index == 0 ? null : _cards[index - 1];
+    Vector2 pos = Vector2.copy(index == 0 ? position : prevCard!.position);
     for (int i = 0; i < cards.length; i++) {
       Card card = cards[i];
-      pos.add(prevCard.isFaceDown && card == cards.first
-          ? _fanOffset1
-          : _fanOffset2);
       final index = _cards.indexOf(card);
+      if (index != 0) {
+        pos.add(prevCard != null && prevCard.isFaceDown && card == cards.first
+            ? _fanOffset1
+            : _fanOffset2);
+      }
       card.priority = 100 + i;
-      card.moveCard(pos, () {
+      card.moveCard(pos, () async {
         if (card == cards.last) {
           card.priority = index;
           layOutCards();

@@ -1,11 +1,11 @@
 import 'package:flame/components.dart';
-import 'package:flame/effects.dart';
-
 import '../klondike_game.dart';
 import '../pile.dart';
 import 'card.dart';
 
-class WastePile extends PositionComponent implements Pile {
+class WastePile extends PositionComponent
+    with HasGameRef<KlondikeGame>
+    implements Pile {
   WastePile({super.position}) : super(size: KlondikeGame.cardSize);
 
   final List<Card> _cards = [];
@@ -21,6 +21,30 @@ class WastePile extends PositionComponent implements Pile {
     fanOutTopCards();
   }
 
+  void acquireCardsFromStock(List<Card> cards) {
+    for (int i = 0; i < cards.length; i++) {
+      Card card = cards[i];
+      if (card.isFaceDown) {
+        card.flip();
+      }
+      Vector2 pos = position.clone();
+      if (i == 1) {
+        pos.add(_fanOffset);
+      } else if (i == 2) {
+        pos.addScaled(_fanOffset, 2);
+      }
+      card.priority = 100 + i;
+      card.moveCard(pos, () async {
+        card.priority = _cards.length;
+        _cards.add(card);
+        card.pile = this;
+        if (card == cards.last) {
+          fanOutTopCards();
+        }
+      });
+    }
+  }
+
   void fanOutTopCards() {
     final n = _cards.length;
     for (var i = 0; i < n; i++) {
@@ -34,6 +58,7 @@ class WastePile extends PositionComponent implements Pile {
     }
   }
 
+  @override
   List<Card> removeAllCards() {
     final cards = _cards.toList();
     _cards.clear();
@@ -57,8 +82,15 @@ class WastePile extends PositionComponent implements Pile {
 
   @override
   void returnCard(Card card) {
-    card.priority = 53;
-    card.moveCard(position.clone()..addScaled(_fanOffset, 2), () {
+    card.priority = 100;
+    Vector2 pos = position.clone();
+    if (_cards.length == 2) {
+      pos.add(_fanOffset);
+    }
+    if (_cards.length >= 3) {
+      pos.addScaled(_fanOffset, 2);
+    }
+    card.moveCard(pos, () async {
       card.priority = _cards.indexOf(card);
       fanOutTopCards();
     });
@@ -93,7 +125,7 @@ class WastePile extends PositionComponent implements Pile {
       pos = position.clone()..addScaled(_fanOffset, 2);
     }
     card.priority = 100;
-    card.moveCard(pos, () {
+    card.moveCard(pos, () async {
       if (parentCard == null) {
         card.priority = 0;
         _cards.insert(0, card);

@@ -13,6 +13,9 @@ abstract class Pile {
   /// that both belong to this pile, and for which [canMoveCard] returns true.
   void removeCard(Card card);
 
+  /// Removes all cards from this pile
+  void removeAllCards();
+
   /// Places a single [card] on top of this pile. This method will only be
   /// called for a card for which [canAcceptCard] returns true.
   void acquireCard(Card card);

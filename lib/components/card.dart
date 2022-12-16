@@ -4,9 +4,8 @@ import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
 import 'package:flame/experimental.dart';
 import 'package:flame/game.dart';
-import 'package:audioplayers/audioplayers.dart';
-import 'package:flame_ex/components/foundation.dart';
-import 'package:flame_ex/components/waste.dart';
+import 'package:flame_klondike/components/stock.dart';
+import 'package:flame_klondike/components/waste.dart';
 
 import '../klondike_game.dart';
 import '../pile.dart';
@@ -61,10 +60,6 @@ class Card extends PositionComponent
   static final Sprite redJack = klondikeSprite(81, 565, 562, 488);
   static final Sprite redQueen = klondikeSprite(717, 541, 486, 515);
   static final Sprite redKing = klondikeSprite(1305, 532, 407, 549);
-
-  static AudioPlayer player = AudioPlayer()
-    ..setSource(AssetSource('card_slide_1.mp3'));
-  static String cardSlide = "card_slide_1.mp3";
 
   Card(int intRank, int intSuit)
       : rank = Rank.of(intRank),
@@ -230,8 +225,8 @@ class Card extends PositionComponent
   @override
   void onDragStart(DragStartEvent event) {
     if (pile?.canMoveCard(this) ?? false) {
-      //FlameAudio.play('card_slide_1.mp3');
-      //player.play(AssetSource('card_slide_1.mp3'));
+      // FlameAudio.play('card_flip.mp3', volume: 0.1);
+      gameRef.flip.start(volume: 0.1);
       _isDragging = true;
       priority = 100;
       if (pile is TableauPile) {
@@ -296,6 +291,19 @@ class Card extends PositionComponent
           }
           attachedCards.clear();
         }
+        StockPile spile = gameRef.stock;
+        WastePile wpile = gameRef.waste;
+        var cards = (findGame()! as FlameGame)
+            .children
+            .whereType<World>()
+            .first
+            .children
+            .whereType<Card>()
+            .where((card) => card.isFaceDown);
+        if (wpile.isEmpty() && spile.isEmpty() && cards.isEmpty) {
+          print('now finish game');
+          gameRef.finishGame();
+        }
         return;
       }
     }
@@ -309,12 +317,16 @@ class Card extends PositionComponent
 
   final List<Card> attachedCards = [];
 
-  Future<void> moveCard(
-      Vector2 destination, void Function()? onComplete) async {
+  void moveCard(
+      Vector2 destination, Future<void> Function()? onComplete) async {
     add(MoveToEffect(
       destination,
-      EffectController(speed: 20000),
-      onComplete: onComplete,
+      EffectController(duration: 0.2),
+      onComplete: (() async {
+        await onComplete?.call();
+        gameRef.place.start(volume: 0.1);
+        gameRef.isRunningUndo = false;
+      }),
     ));
   }
 }

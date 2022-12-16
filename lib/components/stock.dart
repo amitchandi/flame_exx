@@ -34,6 +34,21 @@ class StockPile extends PositionComponent
     card.pile = this;
   }
 
+  void acquireCardsFromWaste(List<Card> cards) {
+    for (int i = 0; i < cards.length; i++) {
+      Card card = cards[i];
+      if (card.isFaceUp) {
+        card.flip();
+      }
+      card.priority = 100 + i;
+      card.moveCard(position, () async {
+        card.priority = _cards.length;
+        _cards.add(card);
+        card.pile = this;
+      });
+    }
+  }
+
   @override
   void onTapUp(TapUpEvent event) {
     final wastePile = parent!.firstChild<WastePile>()!;
@@ -51,10 +66,10 @@ class StockPile extends PositionComponent
         if (_cards.isNotEmpty) {
           final card = _cards.removeLast();
           card.flip();
-          wastePile.acquireCard(card);
           movedCards.add(card);
         }
       }
+      wastePile.acquireCardsFromStock(movedCards);
       gameRef.addMove(this, wastePile, movedCards, null, null);
     }
   }
@@ -79,7 +94,7 @@ class StockPile extends PositionComponent
 
   @override
   void removeCard(Card card) {
-    _cards.removeLast();
+    _cards.remove(card);
   }
 
   @override
@@ -89,5 +104,14 @@ class StockPile extends PositionComponent
   @override
   Card? getLastCard() {
     return _cards.isEmpty ? null : _cards.last;
+  }
+
+  @override
+  void removeAllCards() {
+    _cards.clear();
+  }
+
+  bool isEmpty() {
+    return _cards.isEmpty;
   }
 }
