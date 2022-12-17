@@ -45,7 +45,7 @@ class StockPile extends PositionComponent
         card.priority = _cards.length;
         _cards.add(card);
         card.pile = this;
-      });
+      }, i <= 2);
     }
   }
 
@@ -53,12 +53,8 @@ class StockPile extends PositionComponent
   void onTapUp(TapUpEvent event) {
     final wastePile = parent!.firstChild<WastePile>()!;
     if (_cards.isEmpty) {
-      List<Card> movedCards = [];
-      wastePile.removeAllCards().reversed.forEach((card) {
-        card.flip();
-        acquireCard(card);
-        movedCards.add(card);
-      });
+      List<Card> movedCards = wastePile.removeAllCards().reversed.toList();
+      acquireCardsFromWaste(movedCards);
       gameRef.addMove(wastePile, this, movedCards, null, null);
     } else {
       List<Card> movedCards = [];

@@ -68,7 +68,7 @@ class TableauPile extends PositionComponent
         if (card == cards.last) {
           layOutCards();
         }
-      });
+      }, true);
     }
   }
 
@@ -129,7 +129,7 @@ class TableauPile extends PositionComponent
         () async {
       card.priority = index;
       layOutCards();
-    });
+    }, true);
   }
 
   void returnCards(List<Card> cards) {
@@ -150,7 +150,7 @@ class TableauPile extends PositionComponent
           card.priority = index;
           layOutCards();
         }
-      });
+      }, i <= 2);
     }
   }
 

@@ -1,16 +1,17 @@
-# flame_ex
+# Flame Solitaire Klondike
 
-A new Flutter project.
+A flutter game using the flame engine.
 
-## Getting Started
+## Klondike - Flame Tutorial Expanded
 
-This project is a starting point for a Flutter application.
+This project is a continuation of the incomplete tutorial from Flame:
+[Flame Klondike Tutorial](https://docs.flame-engine.org/1.5.0/tutorials/klondike/klondike.html)
 
-A few resources to get you started if this is your first Flutter project:
+The tutorial leaves off at a game that can be completed, but is missing a few key features.
+I've added the following features to the game:
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+- An undo button to undo your moves.
+- A reset button to start a new game.
+- Animations for undone moves and returned cards.
+- Animations for new games.
+- Autocomplete games when certain condtions are met by automatically moving cards to the foundation pile.

@@ -9,18 +9,18 @@ class ResetButton extends PositionComponent
   late final Sprite image;
   @override
   Future<void>? onLoad() async {
-    image = await gameRef.loadSprite('buttons.png');
+    image = await gameRef.loadSprite('reset.png');
   }
 
   @override
   void onTapUp(TapUpEvent event) {
-    // gameRef.undoMove();
-    print('reset');
-    gameRef.resetGame();
+    if (!gameRef.isRunningInit) {
+      gameRef.resetGame();
+    }
   }
 
   @override
   void render(Canvas canvas) {
-    image.render(canvas, size: Vector2(500, 300));
+    image.render(canvas, size: Vector2(500, 500));
   }
 }

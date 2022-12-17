@@ -317,14 +317,16 @@ class Card extends PositionComponent
 
   final List<Card> attachedCards = [];
 
-  void moveCard(
-      Vector2 destination, Future<void> Function()? onComplete) async {
+  void moveCard(Vector2 destination, Future<void> Function()? onComplete,
+      bool playSound) async {
     add(MoveToEffect(
       destination,
       EffectController(duration: 0.2),
       onComplete: (() async {
         await onComplete?.call();
-        gameRef.place.start(volume: 0.1);
+        if (playSound) {
+          gameRef.place.start(volume: 0.1);
+        }
         gameRef.isRunningUndo = false;
       }),
     ));

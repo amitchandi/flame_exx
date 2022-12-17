@@ -28,9 +28,9 @@ class WastePile extends PositionComponent
         card.flip();
       }
       Vector2 pos = position.clone();
-      if (i == 1) {
+      if (i == cards.length - 2) {
         pos.add(_fanOffset);
-      } else if (i == 2) {
+      } else if (i == cards.length - 1) {
         pos.addScaled(_fanOffset, 2);
       }
       card.priority = 100 + i;
@@ -41,7 +41,7 @@ class WastePile extends PositionComponent
         if (card == cards.last) {
           fanOutTopCards();
         }
-      });
+      }, i <= 2);
     }
   }
 
@@ -93,7 +93,7 @@ class WastePile extends PositionComponent
     card.moveCard(pos, () async {
       card.priority = _cards.indexOf(card);
       fanOutTopCards();
-    });
+    }, true);
   }
 
   int indexOfCard(Card card) {
@@ -135,6 +135,6 @@ class WastePile extends PositionComponent
         card.priority = i;
       }
       fanOutTopCards();
-    });
+    }, true);
   }
 }

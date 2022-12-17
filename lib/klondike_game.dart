@@ -32,6 +32,8 @@ class KlondikeGame extends FlameGame
     const Radius.circular(cardRadius),
   );
 
+  late final World world;
+
   late final StockPile stock;
   late final WastePile waste;
   late final List<FoundationPile> foundations;
@@ -41,11 +43,16 @@ class KlondikeGame extends FlameGame
   late final AudioPool place;
 
   late final List<Card> cards;
-
-  late final World world;
+  final List<Move> moves = [];
+  bool isRunningUndo = false;
+  bool isRunningInit = false;
 
   @override
   Future<void> onLoad() async {
+    // Makes the game full screen and landscape only.
+    Flame.device.fullScreen();
+    Flame.device.setLandscape();
+
     //this.debugMode = true;
     await Flame.images.load('klondike-sprites.png');
     await Flame.images.load('undo.png');
@@ -100,6 +107,7 @@ class KlondikeGame extends FlameGame
           Vector2(cardWidth * 7 + cardGap * 8, 4 * cardHeight + 3 * cardGap)
       ..viewfinder.position = Vector2(cardWidth * 3.5 + cardGap * 4, 0)
       ..viewfinder.anchor = Anchor.topCenter;
+
     add(camera);
 
     cards = [
@@ -114,6 +122,7 @@ class KlondikeGame extends FlameGame
 
   void initCards(
       List<Card> cards, List<TableauPile> piles, StockPile stock) async {
+    isRunningInit = true;
     for (var i = 0; i < 7; i++) {
       for (var j = i; j < 7; j++) {
         piles[j].acquireCardInit(cards.removeLast(), i.toDouble());
@@ -124,18 +133,14 @@ class KlondikeGame extends FlameGame
     for (var element in cards) {
       stock.acquireCard(element);
     }
+    isRunningInit = false;
   }
-
-  final List<Move> moves = [];
-  bool isRunningUndo = false;
 
   void undoMove() {
     if (moves.isEmpty) {
-      print('empty moves');
       return;
     }
     if (isRunningUndo) {
-      print(isRunningUndo);
       return;
     }
     isRunningUndo = true;
@@ -214,7 +219,7 @@ class KlondikeGame extends FlameGame
       card.priority = 100;
       card.moveCard(foundation.position, () async {
         foundation.pile?.acquireCard(card);
-      });
+      }, true);
       await Future.delayed(const Duration(milliseconds: 200));
     }
   }
