@@ -6,10 +6,10 @@ import 'package:flame_klondike/klondike_game.dart';
 
 class ResetButton extends PositionComponent
     with TapCallbacks, HasGameRef<KlondikeGame> {
-  late final Sprite image;
+  late final Sprite sprite;
   @override
   Future<void>? onLoad() async {
-    image = await gameRef.loadSprite('reset.png');
+    sprite = newGameSprite;
   }
 
   @override
@@ -21,6 +21,6 @@ class ResetButton extends PositionComponent
 
   @override
   void render(Canvas canvas) {
-    image.render(canvas, size: Vector2(500, 500));
+    sprite.render(canvas, size: Vector2(500, 500));
   }
 }

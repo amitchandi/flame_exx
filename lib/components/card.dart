@@ -32,7 +32,8 @@ class Card extends PositionComponent
     const Radius.circular(KlondikeGame.cardRadius),
   );
   static final RRect backRRectInner = cardRRect.deflate(40);
-  static final Sprite flameSprite = klondikeSprite(1367, 6, 357, 501);
+  // static final Sprite flameSprite = klondikeSprite(1367, 6, 357, 501);
+  static final Sprite backSprite = cardsSprite(1752, 2, 60, 92);
 
   static final Paint frontBackgroundPaint = Paint()
     ..color = const Color(0xff000000);
@@ -84,10 +85,25 @@ class Card extends PositionComponent
   @override
   void render(Canvas canvas) {
     if (_faceUp) {
-      _renderFront(canvas);
+      // _renderFront(canvas);
+      _newRenderFront(canvas);
     } else {
       _renderBack(canvas);
     }
+  }
+
+  void _newRenderFront(Canvas canvas) {
+    var data = gameRef.cardSpritesData.where(
+      (element) {
+        return element.name == '${rank.value}_${suit.name}';
+      },
+    ).first;
+    cardsSprite(data.x.toDouble(), data.y.toDouble(), data.width.toDouble(),
+            data.height.toDouble())
+        .render(canvas,
+            position: size / 2,
+            anchor: Anchor.center,
+            size: Vector2(KlondikeGame.cardWidth, KlondikeGame.cardHeight));
   }
 
   void _renderFront(Canvas canvas) {
@@ -191,10 +207,14 @@ class Card extends PositionComponent
   }
 
   void _renderBack(Canvas canvas) {
-    canvas.drawRRect(cardRRect, backBackgroundPaint);
-    canvas.drawRRect(cardRRect, backBorderPaint1);
-    canvas.drawRRect(backRRectInner, backBorderPaint2);
-    flameSprite.render(canvas, position: size / 2, anchor: Anchor.center);
+    // canvas.drawRRect(cardRRect, backBackgroundPaint);
+    // canvas.drawRRect(cardRRect, backBorderPaint1);
+    // canvas.drawRRect(backRRectInner, backBorderPaint2);
+    // flameSprite.render(canvas, position: size / 2, anchor: Anchor.center);
+    backSprite.render(canvas,
+        position: size / 2,
+        anchor: Anchor.center,
+        size: Vector2(KlondikeGame.cardWidth, KlondikeGame.cardHeight));
   }
 
   void _drawSprite(
@@ -225,7 +245,6 @@ class Card extends PositionComponent
   @override
   void onDragStart(DragStartEvent event) {
     if (pile?.canMoveCard(this) ?? false) {
-      // FlameAudio.play('card_flip.mp3', volume: 0.1);
       gameRef.flip.start(volume: 0.1);
       _isDragging = true;
       priority = 100;
@@ -301,7 +320,6 @@ class Card extends PositionComponent
             .whereType<Card>()
             .where((card) => card.isFaceDown);
         if (wpile.isEmpty() && spile.isEmpty() && cards.isEmpty) {
-          print('now finish game');
           gameRef.finishGame();
         }
         return;

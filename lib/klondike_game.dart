@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:ui';
 
 import 'package:flame/components.dart';
@@ -7,6 +8,7 @@ import 'package:flame/experimental.dart';
 import 'package:flame_audio/audio_pool.dart';
 import 'package:flame_audio/flame_audio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import 'components/card.dart';
@@ -47,6 +49,8 @@ class KlondikeGame extends FlameGame
   bool isRunningUndo = false;
   bool isRunningInit = false;
 
+  late List<CardSpriteData> cardSpritesData;
+
   @override
   Future<void> onLoad() async {
     // Makes the game full screen and landscape only.
@@ -55,12 +59,19 @@ class KlondikeGame extends FlameGame
 
     //this.debugMode = true;
     await Flame.images.load('klondike-sprites.png');
-    await Flame.images.load('undo.png');
-    await Flame.images.load('reset.png');
-    await Flame.images.load('buttons.png');
+    await Flame.images.load('cards.png');
+    await Flame.images.load('icons.png');
+    await Flame.images.load('card_icons.png');
     await FlameAudio.audioCache.clearAll();
     flip = await FlameAudio.createPool('card_flip.mp3', maxPlayers: 2);
     place = await FlameAudio.createPool('card_place.wav', maxPlayers: 10);
+
+    final String cardSpritesJSON =
+        await rootBundle.loadString('assets/cards.json');
+    cardSpritesData = (await json.decode(cardSpritesJSON) as List)
+        .map((i) => CardSpriteData.fromJson(i))
+        .toList();
+
     stock = StockPile()
       ..size = cardSize
       ..position = Vector2(cardGap, cardGap);
@@ -207,21 +218,22 @@ class KlondikeGame extends FlameGame
     remainingCards.sort(((a, b) {
       return a.rank.value.compareTo(b.rank.value);
     }));
-    for (var card in remainingCards) {
+    for (var cardR in remainingCards) {
       var foundation = allCards
-          .where((element) =>
-              element.suit == card.suit &&
-              element.rank.value == card.rank.value - 1)
+          .where((cardA) =>
+              cardA.suit == cardR.suit &&
+              cardA.rank.value == cardR.rank.value - 1)
           .first;
       if (kDebugMode) {
-        print('${card.toString()} <- $foundation');
+        print('${cardR.toString()} <- $foundation');
       }
-      card.priority = 100;
-      card.moveCard(foundation.position, () async {
-        foundation.pile?.acquireCard(card);
+      cardR.priority = 100;
+      cardR.moveCard(foundation.position, () async {
+        foundation.pile?.acquireCard(cardR);
       }, true);
       await Future.delayed(const Duration(milliseconds: 200));
     }
+    overlays.add('GameOver');
   }
 
   void resetGame() {
@@ -241,6 +253,11 @@ class KlondikeGame extends FlameGame
     world.addAll(cards);
     initCards(cards, piles, stock);
   }
+
+  @override
+  Color backgroundColor() {
+    return const Color.fromARGB(255, 68, 163, 55);
+  }
 }
 
 Sprite klondikeSprite(double x, double y, double width, double height) {
@@ -249,4 +266,57 @@ Sprite klondikeSprite(double x, double y, double width, double height) {
     srcPosition: Vector2(x, y),
     srcSize: Vector2(width, height),
   );
+}
+
+Sprite cardsSprite(double x, double y, double width, double height) {
+  return Sprite(
+    Flame.images.fromCache('cards.png'),
+    srcPosition: Vector2(x, y),
+    srcSize: Vector2(width, height),
+  );
+}
+
+Sprite cardIconsSprite(double x, double y, double width, double height) {
+  return Sprite(
+    Flame.images.fromCache('card_icons.png'),
+    srcPosition: Vector2(x, y),
+    srcSize: Vector2(width, height),
+  );
+}
+
+Sprite newGameSprite = Sprite(
+  Flame.images.fromCache('icons.png'),
+  srcPosition: Vector2(0, 0),
+  srcSize: Vector2(96, 96),
+);
+
+Sprite backSprite = Sprite(
+  Flame.images.fromCache('icons.png'),
+  srcPosition: Vector2(0, 97),
+  srcSize: Vector2(96, 96),
+);
+
+class CardSpriteData {
+  String name;
+  int x;
+  int y;
+  int width;
+  int height;
+
+  CardSpriteData(this.name, this.x, this.y, this.width, this.height);
+
+  CardSpriteData.fromJson(Map<String, dynamic> json)
+      : name = json['name'],
+        x = json['x'],
+        y = json['y'],
+        width = json['width'],
+        height = json['height'];
+
+  Map<String, dynamic> toJson() => {
+        'name': name,
+        'x': x,
+        'y': y,
+        'width': width,
+        'height': height,
+      };
 }

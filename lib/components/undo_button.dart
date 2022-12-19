@@ -6,10 +6,11 @@ import 'package:flame_klondike/klondike_game.dart';
 
 class UndoButton extends PositionComponent
     with TapCallbacks, HasGameRef<KlondikeGame> {
-  late final Sprite image;
+  late final Sprite sprite;
   @override
   Future<void>? onLoad() async {
-    image = await gameRef.loadSprite('undo.png');
+    sprite = backSprite;
+    flipHorizontallyAroundCenter();
   }
 
   @override
@@ -19,6 +20,6 @@ class UndoButton extends PositionComponent
 
   @override
   void render(Canvas canvas) {
-    image.render(canvas);
+    sprite.render(canvas, size: Vector2(500, 500));
   }
 }

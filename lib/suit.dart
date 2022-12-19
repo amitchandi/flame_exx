@@ -12,18 +12,20 @@ class Suit {
     return _singletons[index];
   }
 
-  Suit._(this.value, this.label, double x, double y, double w, double h)
-      : sprite = klondikeSprite(x, y, w, h);
+  Suit._(
+      this.value, this.label, this.name, double x, double y, double w, double h)
+      : sprite = cardIconsSprite(x, y, w, h);
 
   final int value;
   final String label;
+  final String name;
   final Sprite sprite;
 
-  static late final List<Suit> _singletons = [
-    Suit._(0, '♥', 1176, 17, 172, 183),
-    Suit._(1, '♦', 973, 14, 177, 182),
-    Suit._(2, '♣', 974, 226, 184, 172),
-    Suit._(3, '♠', 1178, 220, 176, 182),
+  static final List<Suit> _singletons = [
+    Suit._(0, '♥', 'hearts', 0, 0, 33, 30),
+    Suit._(1, '♦', 'diamonds', 67, 0, 21, 30),
+    Suit._(2, '♣', 'clubs', 35, 0, 30, 30),
+    Suit._(3, '♠', 'spades', 90, 0, 21, 30),
   ];
 
   /// Hearts and Diamonds are red, while Clubs and Spades are black.

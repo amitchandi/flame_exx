@@ -20,9 +20,6 @@ class FoundationPile extends PositionComponent
     ..style = PaintingStyle.stroke
     ..strokeWidth = 10
     ..color = const Color(0x50ffffff);
-  late final _suitPaint = Paint()
-    ..color = suit.isRed ? const Color(0x3a000000) : const Color(0x64000000)
-    ..blendMode = BlendMode.luminosity;
 
   @override
   void acquireCard(Card card) {
@@ -42,8 +39,9 @@ class FoundationPile extends PositionComponent
       canvas,
       position: size / 2,
       anchor: Anchor.center,
-      size: Vector2.all(KlondikeGame.cardWidth * 0.6),
-      overridePaint: _suitPaint,
+      size: suit.value == 1 || suit.value == 3
+          ? Vector2(KlondikeGame.cardWidth * 0.4, KlondikeGame.cardWidth * 0.6)
+          : Vector2.all(KlondikeGame.cardWidth * 0.6),
     );
   }
 
