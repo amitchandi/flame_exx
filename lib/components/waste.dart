@@ -33,6 +33,14 @@ class WastePile extends PositionComponent
       } else if (i == cards.length - 1) {
         pos.addScaled(_fanOffset, 2);
       }
+      if (cards.length == 1 && _cards.length < 3) {
+        pos = position.clone();
+        if (_cards.length == 1) {
+          pos.add(_fanOffset);
+        } else if (_cards.length == 2) {
+          pos.addScaled(_fanOffset, 2);
+        }
+      }
       card.priority = 100 + i;
       card.moveCard(pos, () async {
         card.priority = _cards.length;

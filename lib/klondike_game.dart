@@ -51,6 +51,8 @@ class KlondikeGame extends FlameGame
 
   late List<CardSpriteData> cardSpritesData;
 
+  bool isEasy = false;
+
   @override
   Future<void> onLoad() async {
     // Makes the game full screen and landscape only.
@@ -58,7 +60,6 @@ class KlondikeGame extends FlameGame
     Flame.device.setLandscape();
 
     //this.debugMode = true;
-    await Flame.images.load('klondike-sprites.png');
     await Flame.images.load('cards.png');
     await Flame.images.load('icons.png');
     await Flame.images.load('card_icons.png');
@@ -128,11 +129,9 @@ class KlondikeGame extends FlameGame
     ];
     cards.shuffle();
     world.addAll(cards);
-    initCards(cards, piles, stock);
   }
 
-  void initCards(
-      List<Card> cards, List<TableauPile> piles, StockPile stock) async {
+  void initCards() async {
     isRunningInit = true;
     for (var i = 0; i < 7; i++) {
       for (var j = i; j < 7; j++) {
@@ -251,21 +250,13 @@ class KlondikeGame extends FlameGame
     }
     cards.shuffle();
     world.addAll(cards);
-    initCards(cards, piles, stock);
+    initCards();
   }
 
   @override
   Color backgroundColor() {
     return const Color.fromARGB(255, 68, 163, 55);
   }
-}
-
-Sprite klondikeSprite(double x, double y, double width, double height) {
-  return Sprite(
-    Flame.images.fromCache('klondike-sprites.png'),
-    srcPosition: Vector2(x, y),
-    srcSize: Vector2(width, height),
-  );
 }
 
 Sprite cardsSprite(double x, double y, double width, double height) {
@@ -284,17 +275,13 @@ Sprite cardIconsSprite(double x, double y, double width, double height) {
   );
 }
 
-Sprite newGameSprite = Sprite(
-  Flame.images.fromCache('icons.png'),
-  srcPosition: Vector2(0, 0),
-  srcSize: Vector2(96, 96),
-);
-
-Sprite backSprite = Sprite(
-  Flame.images.fromCache('icons.png'),
-  srcPosition: Vector2(0, 97),
-  srcSize: Vector2(96, 96),
-);
+Sprite iconSprite(double x, double y, double width, double height) {
+  return Sprite(
+    Flame.images.fromCache('icons.png'),
+    srcPosition: Vector2(x, y),
+    srcSize: Vector2(width, height),
+  );
+}
 
 class CardSpriteData {
   String name;

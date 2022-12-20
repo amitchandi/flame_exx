@@ -1,5 +1,6 @@
 import 'package:flame/game.dart';
 import 'package:flame_klondike/overlays/game_over.dart';
+import 'package:flame_klondike/overlays/main_menu.dart';
 import 'package:flutter/material.dart';
 import 'klondike_game.dart';
 import 'package:flame_splash_screen/flame_splash_screen.dart';
@@ -53,8 +54,9 @@ class SplashScreenGameState extends State<SplashScreenGame> {
                     gameFactory: KlondikeGame.new,
                     overlayBuilderMap: {
                       'GameOver': (_, game) => GameOver(game: game),
+                      'MainMenu': (_, game) => MainMenu(game: game),
                     },
-                    // initialActiveOverlays: const ['GameOver'],
+                    initialActiveOverlays: const ['MainMenu'],
                   )),
         ),
       ),

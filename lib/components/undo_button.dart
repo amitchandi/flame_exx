@@ -9,7 +9,7 @@ class UndoButton extends PositionComponent
   late final Sprite sprite;
   @override
   Future<void>? onLoad() async {
-    sprite = backSprite;
+    sprite = iconSprite(0, 97, 96, 96);
     flipHorizontallyAroundCenter();
   }
 

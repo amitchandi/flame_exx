@@ -9,7 +9,7 @@ class ResetButton extends PositionComponent
   late final Sprite sprite;
   @override
   Future<void>? onLoad() async {
-    sprite = newGameSprite;
+    sprite = iconSprite(0, 0, 96, 96);
   }
 
   @override

@@ -57,8 +57,12 @@ class StockPile extends PositionComponent
       acquireCardsFromWaste(movedCards);
       gameRef.addMove(wastePile, this, movedCards, null, null);
     } else {
+      int numMovedCards = 3;
+      if (gameRef.isEasy) {
+        numMovedCards = 1;
+      }
       List<Card> movedCards = [];
-      for (var i = 0; i < 3; i++) {
+      for (var i = 0; i < numMovedCards; i++) {
         if (_cards.isNotEmpty) {
           final card = _cards.removeLast();
           card.flip();
