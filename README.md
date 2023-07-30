@@ -14,4 +14,4 @@ I've added the following features to the game:
 - A reset button to start a new game.
 - Animations for undone moves and returned cards.
 - Animations for new games.
-- Autocomplete games when certain condtions are met by automatically moving cards to the foundation pile.
+- Autocomplete games when certain condtions are met.
